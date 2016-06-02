@@ -173,8 +173,6 @@ export class DbTableFactory {
     }
 }
 
-
-
 export class DbContext {
 
     constructor(connection, dbtables, tableFactory) {
