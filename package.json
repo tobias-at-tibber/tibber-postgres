@@ -1,10 +1,10 @@
 {
   "name": "tibber-postgres",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "",
   "main": "./lib/index.js",
   "scripts": {
-    "build": "babel src -d lib",
+    "build": "babel ./src -d ./lib",
     "2npm": "publish"
   },
   "author": "tibber",
