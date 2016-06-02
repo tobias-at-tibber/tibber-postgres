@@ -1,12 +1,17 @@
 {
   "name": "tibber-postgres",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "",
   "main": "./lib/index.js",
   "scripts": {
     "build": "babel ./src -d ./lib",
     "2npm": "publish"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tibbercom/tibber-postgres.git"
+  },
+  "homepage": "https://github.com/tibbercom/tibber-postgres#readme",
   "author": "tibber",
   "license": "ISC",
   "devDependencies": {
