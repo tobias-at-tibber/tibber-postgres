@@ -1,0 +1,27 @@
+{
+  "name": "tibber-postgres",
+  "version": "0.1.0",
+  "description": "",
+  "main": "./lib/index.js",
+  "scripts": {
+    "build": "babel src -d lib",
+    "2npm": "publish"
+  },
+  "author": "tibber",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-cli": "^6.9.0",
+    "babel-core": "^6.9.0",
+    "babel-plugin-syntax-async-functions": "^6.8.0",
+    "babel-plugin-transform-async-to-generator": "^6.8.0",
+    "babel-preset-node6": "^11.0.0",
+    "publish": "^0.6.0"
+  },
+  "dependencies": {
+    "lodash": "^4.13.1",
+    "pg-promise": "^4.2.5"
+  },
+  "engines": {
+    "node": ">=6.0.0"
+  }
+}
