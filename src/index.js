@@ -7,6 +7,7 @@ export class DbTable {
         this.tableName = tableName;
         this.conn = conn;
         this.fieldToSelect = fieldToSelect || '*';
+        
     }
 
     _reduceToSeparatedString(arr, separator = ",") {
@@ -73,7 +74,7 @@ export class DbTable {
 
     }
 
-    async update(id, payload, transform) {
+    async update(id, payload, transform=true) {
 
         id = this._parseId(id);
 
@@ -100,8 +101,8 @@ export class DbTable {
 
     }
 
-    async byId(id) {
-        return await this.one({ id: id });
+    async byId(id, transform=true) {
+        return await this.one({ id: id }, transform);
     }
 
     async all(page, transform=true) {
@@ -148,7 +149,7 @@ export class DbTable {
 
     }
 
-    async rawWhere(whereString, vals) {
+    async rawWhere(whereString, vals, transform=true) {
 
         let select = `select ${this.fieldToSelect} from ${this.tableName} where ${whereString}`;
         let result = await this.conn.manyOrNone(select, vals);
@@ -160,7 +161,7 @@ export class DbTable {
         return (this.outboundPayloadConverter) ? result.map(this.outboundPayloadConverter) : result;
     }
 
-    async rawWhereOne(whereString, vals) {
+    async rawWhereOne(whereString, vals, transform=true) {
 
         let select = `select ${this.fieldToSelect} from ${this.tableName} where ${whereString}`;
         let result = await this.conn.oneOrNone(select, vals);
@@ -173,18 +174,18 @@ export class DbTable {
     }
 
 
-    async many(filter) {
-        return await this.query(filter);
+    async many(filter, transform=true) {
+        return await this.query(filter, transform);
     }
 
-    async one(filter) {
-        let result = await this.query(filter);
+    async one(filter, transform = true) {
+        let result = await this.query(filter, transform);
         return result[0];
     }
 
-    multiQuery(queries) {
+    multiQuery(queries, transform=true) {
 
-        return Promise.all(queries.map(q => this.query(q)))
+        return Promise.all(queries.map(q => this.query(q, transform)))
             .then(result => _.flatten(result));
 
     }    
