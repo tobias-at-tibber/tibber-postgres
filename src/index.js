@@ -34,13 +34,11 @@ export class DbTable {
             });
     }
 
-
-
-    insert(payload) {
+    async insert(payload, transform=true) {
 
         if (payload.id) delete payload.id
 
-        if (this.inboundPayloadConverter)
+        if (this.inboundPayloadConverter && transform)
             payload = this.inboundPayloadConverter(payload);
 
         let {column_vals, column_names, bind_vars} = this._deconstructPayload(payload);
@@ -49,7 +47,13 @@ export class DbTable {
                       
         
 
-        return this.conn.one(insert, column_vals);
+        var result = this.conn.one(insert, column_vals);
+        
+        if (!transform){
+            return result;
+        }    
+        return (this.outboundPayloadConverter) ? this.outboundPayloadConverter(result) : result;       
+        
     }
 
     _parseId(id) {
@@ -69,11 +73,11 @@ export class DbTable {
 
     }
 
-    async update(id, payload) {
+    async update(id, payload, transform) {
 
         id = this._parseId(id);
 
-        if (this.inboundPayloadConverter)
+        if (this.inboundPayloadConverter && transform)
             payload = this.inboundPayloadConverter(payload);
 
         let {column_vals, column_names, bind_vars} = this._deconstructPayload(payload);
@@ -88,7 +92,10 @@ export class DbTable {
         let update = `update ${this.tableName} set ${setString} where ${id.name} = $${column_vals.length} returning ${this.fieldToSelect}`;
         
         let result = await this.conn.one(update, column_vals);
-
+        
+        if (!transform){
+            return result;
+        }    
         return (this.outboundPayloadConverter) ? this.outboundPayloadConverter(result) : result;
 
     }
@@ -97,7 +104,7 @@ export class DbTable {
         return await this.one({ id: id });
     }
 
-    async all(page) {
+    async all(page, transform=true) {
         let sql = `select ${this.fieldToSelect} from ${this.tableName}`;
 
         if (page && page.size && page.no) {
@@ -105,16 +112,19 @@ export class DbTable {
         }
         let result = await this.conn.manyOrNone(sql);
         
+        if (!transform){
+            return result;
+        }           
 
         return (this.outboundPayloadConverter) ? result.map(this.outboundPayloadConverter) : result;
     }
 
-    async query(filter, page) {
+    async query(filter, page, transform=true) {
 
         if (!filter || Object.keys(filter).length == 0)
-            return this.all(page);
+            return this.all(page, transform);
 
-        if (this.queryConverter) {
+        if (this.queryConverter && transform) {
             filter = this.queryConverter(filter);
         }
         let {column_vals, column_names, bind_vars} = this._deconstructPayload(filter);
@@ -130,6 +140,10 @@ export class DbTable {
         }
         let result = await this.conn.manyOrNone(select, column_vals);
 
+        if (!transform){
+            return result;
+        }        
+
         return (this.outboundPayloadConverter) ? result.map(this.outboundPayloadConverter) : result;
 
     }
@@ -138,6 +152,11 @@ export class DbTable {
 
         let select = `select ${this.fieldToSelect} from ${this.tableName} where ${whereString}`;
         let result = await this.conn.manyOrNone(select, vals);
+        
+        if (!transform){
+            return result;
+        }
+        
         return (this.outboundPayloadConverter) ? result.map(this.outboundPayloadConverter) : result;
     }
 
@@ -145,6 +164,11 @@ export class DbTable {
 
         let select = `select ${this.fieldToSelect} from ${this.tableName} where ${whereString}`;
         let result = await this.conn.oneOrNone(select, vals);
+        
+        if (!transform){
+            return result;
+        }
+        
         return (this.outboundPayloadConverter) ? this.outboundPayloadConverter(result) : result;
     }
 
