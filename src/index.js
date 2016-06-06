@@ -174,18 +174,18 @@ export class DbTable {
     }
 
 
-    async many(filter, transform=true) {
-        return await this.query(filter, transform);
+    async many(filter, page, transform=true) {
+        return await this.query(filter,page, transform);
     }
 
     async one(filter, transform = true) {
-        let result = await this.query(filter, transform);
+        let result = await this.query(filter, null, transform);
         return result[0];
     }
 
     multiQuery(queries, transform=true) {
 
-        return Promise.all(queries.map(q => this.query(q, transform)))
+        return Promise.all(queries.map(q => this.query(q,null, transform)))
             .then(result => _.flatten(result));
 
     }    
