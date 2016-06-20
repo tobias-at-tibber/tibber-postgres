@@ -213,9 +213,9 @@ export class DbContext {
 
     async inTransaction(func) {
 
-        await this.connection.tx(async (t) => {
-            var ctx = new DbContext(t, this.dbTables, this.tableFactory);
-            await func(ctx);
+        return await this.connection.tx(async (t) => {
+            let ctx = new DbContext(t, this.dbTables, this.tableFactory);
+            return await func(ctx);
         });
     }
 
