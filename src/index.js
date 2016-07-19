@@ -37,7 +37,7 @@ export class DbTable {
 
     async insert(payload, transform=true) {
 
-        if (payload.id) delete payload.id
+        if (payload.id != undefined) delete payload.id
 
         if (this.inboundPayloadConverter && transform)
             payload = this.inboundPayloadConverter(payload);
