@@ -7,7 +7,7 @@ export class DbTable {
         this.tableName = tableName;
         this.conn = conn;
         this.fieldToSelect = fieldToSelect || '*';
-        
+
     }
 
     _reduceToSeparatedString(arr, separator = ",") {
@@ -24,7 +24,7 @@ export class DbTable {
     _deconstructPayload(payload) {
 
         return Object.keys(payload).reduce((result, key, i) => {
-            result.column_vals.push(payload[key]);
+            result.column_vals.push(payload[key] === '' ? null : payload[key]);
             result.column_names.push(`"${key}"`);
             result.bind_vars.push(`$${++i}`);
             return result;
@@ -35,7 +35,7 @@ export class DbTable {
             });
     }
 
-    async insert(payload, transform=true) {
+    async insert(payload, transform = true) {
 
         if (payload.id != undefined) delete payload.id
 
@@ -45,16 +45,16 @@ export class DbTable {
         let {column_vals, column_names, bind_vars} = this._deconstructPayload(payload);
         let insert = `insert into ${this.tableName} (${this._reduceToSeparatedString(column_names)}) 
                       values (${this._reduceToSeparatedString(bind_vars)}) returning ${this.fieldToSelect}`;
-                      
-        
+
+
 
         var result = this.conn.one(insert, column_vals);
-        
-        if (!transform){
+
+        if (!transform) {
             return result;
-        }    
-        return (this.outboundPayloadConverter) ? this.outboundPayloadConverter(result) : result;       
-        
+        }
+        return (this.outboundPayloadConverter) ? this.outboundPayloadConverter(result) : result;
+
     }
 
     _parseId(id) {
@@ -74,7 +74,7 @@ export class DbTable {
 
     }
 
-    async update(id, payload, transform=true) {
+    async update(id, payload, transform = true) {
 
         id = this._parseId(id);
 
@@ -91,36 +91,36 @@ export class DbTable {
         column_vals.push(id.value);
 
         let update = `update ${this.tableName} set ${setString} where ${id.name} = $${column_vals.length} returning ${this.fieldToSelect}`;
-        
+
         let result = await this.conn.one(update, column_vals);
-        
-        if (!transform){
+
+        if (!transform) {
             return result;
-        }    
+        }
         return (this.outboundPayloadConverter) ? this.outboundPayloadConverter(result) : result;
 
     }
 
-    async byId(id, transform=true) {
+    async byId(id, transform = true) {
         return await this.one({ id: id }, transform);
     }
 
-    async all(page, transform=true) {
+    async all(page, transform = true) {
         let sql = `select ${this.fieldToSelect} from ${this.tableName}`;
 
         if (page && page.size && page.no) {
             sql += ` offset ${(page.size * page.no) - page.size} limit ${page.size}`;
         }
         let result = await this.conn.manyOrNone(sql);
-        
-        if (!transform){
+
+        if (!transform) {
             return result;
-        }           
+        }
 
         return (this.outboundPayloadConverter) ? result.map(this.outboundPayloadConverter) : result;
     }
 
-    async query(filter, page, transform=true) {
+    async query(filter, page, transform = true) {
 
         if (!filter || Object.keys(filter).length == 0)
             return this.all(page, transform);
@@ -129,10 +129,22 @@ export class DbTable {
             filter = this.queryConverter(filter);
         }
         let {column_vals, column_names, bind_vars} = this._deconstructPayload(filter);
+        let columnValsIdsToBeRemoved = [];
         let whereString = column_names.reduce((prev, curr, i) => {
-            if (!prev) return `${curr} = ${bind_vars[i]}`;
+
+            if (column_vals[i] === null) {
+                columnValsIdsToBeRemoved.push(i);
+                if (!prev) return `${curr}' is null`;
+                return `${prev} and ${curr} is null`;
+            }
+
+            if (!prev) return `${curr}'='${bind_vars[i]}`;
             return `${prev} and ${curr} = ${bind_vars[i]}`;
         }, null);
+
+        if (columnValsIdsToBeRemoved.length > 0){
+            column_vals = column_vals.filter((v,i)=> columnValsIdsToBeRemoved.filter(ci=> ci==i).length == 0);
+        }
 
         let select = `select ${this.fieldToSelect} from ${this.tableName} where ${whereString}`;
 
@@ -141,41 +153,41 @@ export class DbTable {
         }
         let result = await this.conn.manyOrNone(select, column_vals);
 
-        if (!transform){
+        if (!transform) {
             return result;
-        }        
+        }
 
         return (this.outboundPayloadConverter) ? result.map(this.outboundPayloadConverter) : result;
 
     }
 
-    async rawWhere(whereString, vals, transform=true) {
+    async rawWhere(whereString, vals, transform = true) {
 
         let select = `select ${this.fieldToSelect} from ${this.tableName} where ${whereString}`;
         let result = await this.conn.manyOrNone(select, vals);
-        
-        if (!transform){
+
+        if (!transform) {
             return result;
         }
-        
+
         return (this.outboundPayloadConverter) ? result.map(this.outboundPayloadConverter) : result;
     }
 
-    async rawWhereOne(whereString, vals, transform=true) {
+    async rawWhereOne(whereString, vals, transform = true) {
 
         let select = `select ${this.fieldToSelect} from ${this.tableName} where ${whereString}`;
         let result = await this.conn.oneOrNone(select, vals);
-        
-        if (!transform){
+
+        if (!transform) {
             return result;
         }
-        
+
         return (this.outboundPayloadConverter) ? this.outboundPayloadConverter(result) : result;
     }
 
 
-    async many(filter, page, transform=true) {
-        return await this.query(filter,page, transform);
+    async many(filter, page, transform = true) {
+        return await this.query(filter, page, transform);
     }
 
     async one(filter, transform = true) {
@@ -183,12 +195,12 @@ export class DbTable {
         return result[0];
     }
 
-    multiQuery(queries, transform=true) {
+    multiQuery(queries, transform = true) {
 
-        return Promise.all(queries.map(q => this.query(q,null, transform)))
+        return Promise.all(queries.map(q => this.query(q, null, transform)))
             .then(result => _.flatten(result));
 
-    }    
+    }
 }
 
 export class DbTableFactory {
