@@ -1,7 +1,7 @@
 machine:
   environment:
     # See note about config.database.yml below.
-    DATABASE_URL: postgres://postgres@127.0.0.1:5433/postgres
+    DATABASE_URL: postgres://ubuntu:@127.0.0.1:5432/circle_test
   node:
     version: 6.2.0
 deployment:
