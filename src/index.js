@@ -128,18 +128,20 @@ export class DbTable {
         if (this.queryConverter && transform) {
             filter = this.queryConverter(filter);
         }
-        let {column_vals, column_names, bind_vars} = this._deconstructPayload(filter);
+        let {column_vals, column_names} = this._deconstructPayload(filter);
         let columnValsIdsToBeRemoved = [];
+        let bind_vars = [];
         let whereString = column_names.reduce((prev, curr, i) => {
 
             if (column_vals[i] === null) {
                 columnValsIdsToBeRemoved.push(i);
-                if (!prev) return `${curr}' is null`;
+                if (!prev) return `${curr} is null`;
                 return `${prev} and ${curr} is null`;
             }
-
-            if (!prev) return `${curr}'='${bind_vars[i]}`;
-            return `${prev} and ${curr} = ${bind_vars[i]}`;
+            const bind_var = '$'+(bind_vars.length+1);
+            bind_vars.push(bind_var);
+            if (!prev) return `${curr}'='${bind_var}`;
+            return `${prev} and ${curr} = ${bind_var}`;
         }, null);
 
         if (columnValsIdsToBeRemoved.length > 0){
@@ -147,6 +149,7 @@ export class DbTable {
         }
 
         let select = `select ${this.fieldToSelect} from ${this.tableName} where ${whereString}`;
+        console.log(select);
 
         if (page && page.size && page.no) {
             select += ` offset ${(page.size * page.no) - page.size} limit ${page.size}`;
