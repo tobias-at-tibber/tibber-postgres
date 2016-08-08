@@ -140,7 +140,7 @@ export class DbTable {
             }
             const bind_var = '$'+(bind_vars.length+1);
             bind_vars.push(bind_var);
-            if (!prev) return `${curr}'='${bind_var}`;
+            if (!prev) return `${curr} = ${bind_var}`;
             return `${prev} and ${curr} = ${bind_var}`;
         }, null);
 
@@ -149,7 +149,7 @@ export class DbTable {
         }
 
         let select = `select ${this.fieldToSelect} from ${this.tableName} where ${whereString}`;
-        console.log(select);
+        
 
         if (page && page.size && page.no) {
             select += ` offset ${(page.size * page.no) - page.size} limit ${page.size}`;
