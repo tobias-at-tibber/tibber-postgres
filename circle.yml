@@ -1,4 +1,6 @@
-environment:
+machine:
+  environment:
+    # See note about config.database.yml below.
     DATABASE_URL: postgres://postgres@127.0.0.1:5433/test_database
 deployment:
   npm:
