@@ -35,9 +35,9 @@ export class DbTable {
             });
     }
 
-    async insert(payload, transform = true) {
+    async insert(payload, transform = true, allowPkInsert = false) {
 
-        if (payload.id != undefined) delete payload.id
+        if (payload.id != undefined && !allowPkInsert) delete payload.id
 
         if (this.inboundPayloadConverter && transform)
             payload = this.inboundPayloadConverter(payload);

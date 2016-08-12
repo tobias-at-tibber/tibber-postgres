@@ -11,6 +11,13 @@ test.before(async (t)=>{
    await conn.none(seedSql);
 });
 
+test('should be able to retrieve all records', async (t) => {
+    const test = new DbTable('test',conn);
+
+    var result = await test.query(undefined);
+    t.is(result.length, 3);
+});
+
 test('should be able to run queries with null values', async (t) => {
     const test = new DbTable('test',conn);
 
