@@ -48,7 +48,7 @@ export class DbTable {
 
 
 
-        var result = this.conn.one(insert, column_vals);
+        var result = await this.conn.one(insert, column_vals);
 
         if (!transform) {
             return result;
