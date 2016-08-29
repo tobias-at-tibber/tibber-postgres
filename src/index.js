@@ -1,6 +1,14 @@
 import { default as pgp } from 'pg-promise';
 import _ from 'lodash';
 
+
+const ops = {
+    insert:'insert',
+    update:'update',
+    query: 'query',
+    delete: 'delete'
+}
+
 export class DbTable {
 
     constructor(tableName, conn, fieldToSelect) {
@@ -40,7 +48,7 @@ export class DbTable {
         if (payload.id != undefined && !allowPkInsert) delete payload.id
 
         if (this.inboundPayloadConverter && transform)
-            payload = this.inboundPayloadConverter(payload);
+            payload = this.inboundPayloadConverter(payload,ops.insert);
 
         let {column_vals, column_names, bind_vars} = this._deconstructPayload(payload);
         let insert = `insert into ${this.tableName} (${this._reduceToSeparatedString(column_names)}) 
@@ -53,7 +61,7 @@ export class DbTable {
         if (!transform) {
             return result;
         }
-        return (this.outboundPayloadConverter) ? this.outboundPayloadConverter(result) : result;
+        return (this.outboundPayloadConverter) ? this.outboundPayloadConverter(result,ops.insert) : result;
 
     }
 
@@ -79,7 +87,7 @@ export class DbTable {
         id = this._parseId(id);
 
         if (this.inboundPayloadConverter && transform)
-            payload = this.inboundPayloadConverter(payload);
+            payload = this.inboundPayloadConverter(payload,ops.update);
 
         let {column_vals, column_names, bind_vars} = this._deconstructPayload(payload);
         let setString = column_names.reduce((prev, curr, i) => {
@@ -97,7 +105,7 @@ export class DbTable {
         if (!transform) {
             return result;
         }
-        return (this.outboundPayloadConverter) ? this.outboundPayloadConverter(result) : result;
+        return (this.outboundPayloadConverter) ? this.outboundPayloadConverter(result, ops.update) : result;
 
     }
 
@@ -117,7 +125,7 @@ export class DbTable {
             return result;
         }
 
-        return (this.outboundPayloadConverter) ? result.map(this.outboundPayloadConverter) : result;
+        return (this.outboundPayloadConverter) ? result.map(r=> this.outboundPayloadConverter(r,ops.query)) : result;
     }
 
     async query(filter, page, transform = true) {
@@ -160,7 +168,7 @@ export class DbTable {
             return result;
         }
 
-        return (this.outboundPayloadConverter) ? result.map(this.outboundPayloadConverter) : result;
+        return (this.outboundPayloadConverter) ? result.map(r=>this.outboundPayloadConverter(r,ops.query)) : result;
 
     }
 
@@ -173,7 +181,7 @@ export class DbTable {
             return result;
         }
 
-        return (this.outboundPayloadConverter) ? result.map(this.outboundPayloadConverter) : result;
+        return (this.outboundPayloadConverter) ? result.map(r=>this.outboundPayloadConverter(r, ops.query)) : result;
     }
 
     async rawWhereOne(whereString, vals, transform = true) {
@@ -185,7 +193,7 @@ export class DbTable {
             return result;
         }
 
-        return (this.outboundPayloadConverter) ? this.outboundPayloadConverter(result) : result;
+        return (this.outboundPayloadConverter) ? this.outboundPayloadConverter(result,ops.query) : result;
     }
 
 
