@@ -5,11 +5,11 @@ import {DbTable} from '../src/index';
 
 const conn = pg()(process.env.DATABASE_URL || require('../config.json')["test-db"]);
 
-test.before(async (t)=>{
+/*test.before(async (t)=>{
 
    const seedSql = fs.readFileSync(__dirname + '/initDb.sql', "utf8");
    await conn.none(seedSql);
-});
+});*/
 
 test('should be able to retrieve all records', async (t) => {
     const test = new DbTable('test',conn);
@@ -30,4 +30,12 @@ test('should be able to combine null and not null query values', async (t) => {
 
     var result = await test.query({stringCol:null, integerCol : 1});
     t.is(result.length, 1);
+});
+
+test.only('should be able to infinity values into timestamps', async (t) => {
+    const test = new DbTable('timestamps',conn);
+
+    var result = await test.insert({validFrom: Infinity,validTo: Infinity});
+    console.log(result);
+    //t.is(result.length, 1);
 });

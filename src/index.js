@@ -3,8 +3,8 @@ import _ from 'lodash';
 
 
 const ops = {
-    insert:'insert',
-    update:'update',
+    insert: 'insert',
+    update: 'update',
     query: 'query',
     delete: 'delete'
 }
@@ -32,7 +32,12 @@ export class DbTable {
     _deconstructPayload(payload) {
 
         return Object.keys(payload).reduce((result, key, i) => {
-            result.column_vals.push(payload[key] === '' ? null : payload[key]);
+
+            let value = payload[key];
+            if (value === Infinity) {
+                value = 'infinity';
+            }            
+            result.column_vals.push(payload[key] === '' ? null : value);
             result.column_names.push(`"${key}"`);
             result.bind_vars.push(`$${++i}`);
             return result;
@@ -48,7 +53,7 @@ export class DbTable {
         if (payload.id != undefined && !allowPkInsert) delete payload.id
 
         if (this.inboundPayloadConverter && transform)
-            payload = this.inboundPayloadConverter(payload,ops.insert);
+            payload = this.inboundPayloadConverter(payload, ops.insert);
 
         let {column_vals, column_names, bind_vars} = this._deconstructPayload(payload);
         let insert = `insert into ${this.tableName} (${this._reduceToSeparatedString(column_names)}) 
@@ -61,7 +66,7 @@ export class DbTable {
         if (!transform) {
             return result;
         }
-        return (this.outboundPayloadConverter) ? this.outboundPayloadConverter(result,ops.insert) : result;
+        return (this.outboundPayloadConverter) ? this.outboundPayloadConverter(result, ops.insert) : result;
 
     }
 
@@ -87,7 +92,7 @@ export class DbTable {
         id = this._parseId(id);
 
         if (this.inboundPayloadConverter && transform)
-            payload = this.inboundPayloadConverter(payload,ops.update);
+            payload = this.inboundPayloadConverter(payload, ops.update);
 
         let {column_vals, column_names, bind_vars} = this._deconstructPayload(payload);
         let setString = column_names.reduce((prev, curr, i) => {
@@ -125,7 +130,7 @@ export class DbTable {
             return result;
         }
 
-        return (this.outboundPayloadConverter) ? result.map(r=> this.outboundPayloadConverter(r,ops.query)) : result;
+        return (this.outboundPayloadConverter) ? result.map(r => this.outboundPayloadConverter(r, ops.query)) : result;
     }
 
     async query(filter, page, transform = true) {
@@ -146,18 +151,18 @@ export class DbTable {
                 if (!prev) return `${curr} is null`;
                 return `${prev} and ${curr} is null`;
             }
-            const bind_var = '$'+(bind_vars.length+1);
+            const bind_var = '$' + (bind_vars.length + 1);
             bind_vars.push(bind_var);
             if (!prev) return `${curr} = ${bind_var}`;
             return `${prev} and ${curr} = ${bind_var}`;
         }, null);
 
-        if (columnValsIdsToBeRemoved.length > 0){
-            column_vals = column_vals.filter((v,i)=> columnValsIdsToBeRemoved.filter(ci=> ci==i).length == 0);
+        if (columnValsIdsToBeRemoved.length > 0) {
+            column_vals = column_vals.filter((v, i) => columnValsIdsToBeRemoved.filter(ci => ci == i).length == 0);
         }
 
         let select = `select ${this.fieldToSelect} from ${this.tableName} where ${whereString}`;
-        
+
 
         if (page && page.size && page.no) {
             select += ` offset ${(page.size * page.no) - page.size} limit ${page.size}`;
@@ -168,7 +173,7 @@ export class DbTable {
             return result;
         }
 
-        return (this.outboundPayloadConverter) ? result.map(r=>this.outboundPayloadConverter(r,ops.query)) : result;
+        return (this.outboundPayloadConverter) ? result.map(r => this.outboundPayloadConverter(r, ops.query)) : result;
 
     }
 
@@ -181,7 +186,7 @@ export class DbTable {
             return result;
         }
 
-        return (this.outboundPayloadConverter) ? result.map(r=>this.outboundPayloadConverter(r, ops.query)) : result;
+        return (this.outboundPayloadConverter) ? result.map(r => this.outboundPayloadConverter(r, ops.query)) : result;
     }
 
     async rawWhereOne(whereString, vals, transform = true) {
@@ -193,7 +198,7 @@ export class DbTable {
             return result;
         }
 
-        return (this.outboundPayloadConverter) ? this.outboundPayloadConverter(result,ops.query) : result;
+        return (this.outboundPayloadConverter) ? this.outboundPayloadConverter(result, ops.query) : result;
     }
 
 
