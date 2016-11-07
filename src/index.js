@@ -77,6 +77,10 @@ export class DbTable {
 
         let keys = Object.keys(id);
 
+        if (keys.length > 1 && keys.includes("id")){
+           return { name: "id", value: id["id"] };
+        }
+
         if (keys.length > 1 || keys.length == 0)
             throw "invalid id";
 
@@ -85,6 +89,12 @@ export class DbTable {
             value: id[keys[0]]
         };
 
+    }
+
+    async delete(idOrObject){
+        const id = this._parseId(idOrObject);
+        let deleteSql = `delete from ${this.tableName} where ${id.name} = $1`;
+        await this.conn.none(deleteSql, [id.value]);
     }
 
     async update(id, payload, transform = true) {
