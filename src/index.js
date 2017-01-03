@@ -52,14 +52,14 @@ export class DbTable {
 
         if (payload.id != undefined && !allowPkInsert) delete payload.id
 
+        if (payload.createdAt != undefined) delete payload.createdAt;
+
         if (this.inboundPayloadConverter && transform)
             payload = this.inboundPayloadConverter(payload, ops.insert);
 
         let {column_vals, column_names, bind_vars} = this._deconstructPayload(payload);
         let insert = `insert into ${this.tableName} (${this._reduceToSeparatedString(column_names)}) 
                       values (${this._reduceToSeparatedString(bind_vars)}) returning ${this.fieldToSelect}`;
-
-
 
         var result = await this.conn.one(insert, column_vals);
 
