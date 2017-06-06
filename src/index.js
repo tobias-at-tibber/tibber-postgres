@@ -1,5 +1,6 @@
 import { default as pgp } from 'pg-promise';
 import _ from 'lodash';
+import moment from 'moment-timezone';
 
 
 const ops = {
@@ -226,6 +227,20 @@ export class DbTable {
         return Promise.all(queries.map(q => this.query(q, null, transform)))
             .then(result => _.flatten(result));
 
+    }
+}
+
+export class ModifiedAtDataTable extends DbTable {
+
+    constructor(tableName, connection) {
+        super(tableName, connection)
+    }
+
+    inboundPayloadConverter(payload, op) {
+        if (op == ops.update) {
+            payload.modifiedAt = moment.tz().utc().format();            
+        }
+        return payload;
     }
 }
 
