@@ -1,14 +1,18 @@
-machine:
-  environment:
-    # See note about config.database.yml below.
-    DATABASE_URL: postgres://ubuntu:@127.0.0.1:5432/circle_test
-  node:
-    version: 6.2.0
-deployment:
-  npm:
-    branch: master
-    commands:
-      - npm run build
-      - echo -e "$NPM_USERNAME\n$NPM_PASSWORD\n$NPM_EMAIL" | npm login
-      - npm run 2npm
-   
+version: 2
+jobs:
+  build:
+    environment:
+      - DATABASE_URL: postgres://ubuntu:@127.0.0.1:5432/circle_test
+    working_directory: ~/package
+    docker:
+      - image: circleci/node:10
+    steps:
+      - checkout
+      - run:
+          name: Deploy Package
+          command: |
+            npm install npm-cli-login
+            yarn
+            yarn build
+            npm run login
+            npm run 2npm

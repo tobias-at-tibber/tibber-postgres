@@ -6,7 +6,8 @@
   "scripts": {
     "build": "babel ./src -d ./lib",
     "2npm": "publish",
-    "test": "ava --require babel-register --verbose"
+    "test": "ava --require babel-register --verbose",
+    "login": "npm-cli-login -u $NPM_USERNAME -p $NPM_PASSWORD -e $NPM_EMAIL"
   },
   "repository": {
     "type": "git",
