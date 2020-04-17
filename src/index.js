@@ -1,7 +1,8 @@
 import { default as pgp } from 'pg-promise';
 import _ from 'lodash';
 import moment from 'moment-timezone';
-
+import * as JSONStream from 'JSONStream';
+import QueryStream from 'pg-query-stream';
 
 const ops = {
     insert: 'insert',
@@ -37,7 +38,7 @@ export class DbTable {
             let value = payload[key];
             if (value === Infinity) {
                 value = 'infinity';
-            }            
+            }
             result.column_vals.push(payload[key] === '' ? null : value);
             result.column_names.push(`"${key}"`);
             result.bind_vars.push(`$${++i}`);
@@ -59,7 +60,7 @@ export class DbTable {
             payload = this.inboundPayloadConverter(payload, ops.insert);
 
         let {column_vals, column_names, bind_vars} = this._deconstructPayload(payload);
-        let insert = `insert into ${this.tableName} (${this._reduceToSeparatedString(column_names)}) 
+        let insert = `insert into ${this.tableName} (${this._reduceToSeparatedString(column_names)})
                       values (${this._reduceToSeparatedString(bind_vars)}) returning ${this.fieldToSelect}`;
 
         var result = await this.conn.one(insert, column_vals);
@@ -144,6 +145,38 @@ export class DbTable {
         return (this.outboundPayloadConverter) ? result.map(r => this.outboundPayloadConverter(r, ops.query)) : result;
     }
 
+    async buildQuery(filter) {
+
+        let {column_vals, column_names} = this._deconstructPayload(filter);
+
+        if (!filter || Object.keys(filter).length == 0) {
+            const select = `select ${this.fieldToSelect} from ${this.tableName}`;
+            return { select, column_vals };
+        } else  {
+            let columnValsIdsToBeRemoved = [];
+            let bind_vars = [];
+            let whereString = column_names.reduce((prev, curr, i) => {
+
+                if (column_vals[i] === null) {
+                    columnValsIdsToBeRemoved.push(i);
+                    if (!prev) return `${curr} is null`;
+                    return `${prev} and ${curr} is null`;
+                }
+                const bind_var = '$' + (bind_vars.length + 1);
+                bind_vars.push(bind_var);
+                if (!prev) return `${curr} = ${bind_var}`;
+                return `${prev} and ${curr} = ${bind_var}`;
+            }, null);
+
+            if (columnValsIdsToBeRemoved.length > 0) {
+                column_vals = column_vals.filter((v, i) => columnValsIdsToBeRemoved.filter(ci => ci == i).length == 0);
+            }
+
+            const select = `select ${this.fieldToSelect} from ${this.tableName} where ${whereString}`;
+            return { select, column_vals };
+        }
+    }
+
     async query(filter, page, transform = true) {
 
         if (!filter || Object.keys(filter).length == 0)
@@ -152,28 +185,8 @@ export class DbTable {
         if (this.queryConverter && transform) {
             filter = this.queryConverter(filter);
         }
-        let {column_vals, column_names} = this._deconstructPayload(filter);
-        let columnValsIdsToBeRemoved = [];
-        let bind_vars = [];
-        let whereString = column_names.reduce((prev, curr, i) => {
 
-            if (column_vals[i] === null) {
-                columnValsIdsToBeRemoved.push(i);
-                if (!prev) return `${curr} is null`;
-                return `${prev} and ${curr} is null`;
-            }
-            const bind_var = '$' + (bind_vars.length + 1);
-            bind_vars.push(bind_var);
-            if (!prev) return `${curr} = ${bind_var}`;
-            return `${prev} and ${curr} = ${bind_var}`;
-        }, null);
-
-        if (columnValsIdsToBeRemoved.length > 0) {
-            column_vals = column_vals.filter((v, i) => columnValsIdsToBeRemoved.filter(ci => ci == i).length == 0);
-        }
-
-        let select = `select ${this.fieldToSelect} from ${this.tableName} where ${whereString}`;
-
+        let { select, column_vals } = await this.buildQuery(filter);
 
         if (page && page.size && page.no) {
             select += ` offset ${(page.size * page.no) - page.size} limit ${page.size}`;
@@ -238,7 +251,7 @@ export class ModifiedAtDataTable extends DbTable {
 
     inboundPayloadConverter(payload, op) {
         if (op == ops.update) {
-            payload.modifiedAt = moment.tz().utc().format();            
+            payload.modifiedAt = moment.tz().utc().format();
         }
         return payload;
     }
@@ -272,6 +285,10 @@ export class DbContext {
         });
     }
 
+    async streamJSON(query, parameters, responseStream) {
+        const qs = new QueryStream(query, parameters);
+        return this.connection.stream(qs, s => {
+            s.pipe(JSONStream.stringify()).pipe(responseStream);
+        });
+    }
 }
-
-
