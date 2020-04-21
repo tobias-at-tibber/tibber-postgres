@@ -145,36 +145,40 @@ export class DbTable {
         return (this.outboundPayloadConverter) ? result.map(r => this.outboundPayloadConverter(r, ops.query)) : result;
     }
 
-    async buildQuery(filter) {
+    async buildQuery(filter, page) {
 
         let {column_vals, column_names} = this._deconstructPayload(filter);
 
-        if (!filter || Object.keys(filter).length == 0) {
-            const select = `select ${this.fieldToSelect} from ${this.tableName}`;
+        let select = `select ${this.fieldToSelect} from ${this.tableName}`;
+        if (!filter || Object.keys(filter).length == 0)
             return { select, column_vals };
-        } else  {
-            let columnValsIdsToBeRemoved = [];
-            let bind_vars = [];
-            let whereString = column_names.reduce((prev, curr, i) => {
 
-                if (column_vals[i] === null) {
-                    columnValsIdsToBeRemoved.push(i);
-                    if (!prev) return `${curr} is null`;
-                    return `${prev} and ${curr} is null`;
-                }
-                const bind_var = '$' + (bind_vars.length + 1);
-                bind_vars.push(bind_var);
-                if (!prev) return `${curr} = ${bind_var}`;
-                return `${prev} and ${curr} = ${bind_var}`;
-            }, null);
+        let columnValsIdsToBeRemoved = [];
+        let bind_vars = [];
+        let whereString = column_names.reduce((prev, curr, i) => {
 
-            if (columnValsIdsToBeRemoved.length > 0) {
-                column_vals = column_vals.filter((v, i) => columnValsIdsToBeRemoved.filter(ci => ci == i).length == 0);
+            if (column_vals[i] === null) {
+                columnValsIdsToBeRemoved.push(i);
+                if (!prev) return `${curr} is null`;
+                return `${prev} and ${curr} is null`;
             }
+            const bind_var = '$' + (bind_vars.length + 1);
+            bind_vars.push(bind_var);
+            if (!prev) return `${curr} = ${bind_var}`;
+            return `${prev} and ${curr} = ${bind_var}`;
+        }, null);
 
-            const select = `select ${this.fieldToSelect} from ${this.tableName} where ${whereString}`;
-            return { select, column_vals };
+        if (columnValsIdsToBeRemoved.length > 0) {
+            column_vals = column_vals.filter((v, i) => columnValsIdsToBeRemoved.filter(ci => ci == i).length == 0);
         }
+
+        select +=  ` where ${whereString}`;
+
+        if (page && page.size && page.no) {
+            select += ` offset ${(page.size * page.no) - page.size} limit ${page.size}`;
+        }
+
+        return { select, column_vals };
     }
 
     async query(filter, page, transform = true) {
@@ -186,11 +190,7 @@ export class DbTable {
             filter = this.queryConverter(filter);
         }
 
-        let { select, column_vals } = await this.buildQuery(filter);
-
-        if (page && page.size && page.no) {
-            select += ` offset ${(page.size * page.no) - page.size} limit ${page.size}`;
-        }
+        let { select, column_vals } = await this.buildQuery(filter, page);
         let result = await this.conn.manyOrNone(select, column_vals);
 
         if (!transform) {
