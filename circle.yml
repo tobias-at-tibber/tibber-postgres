@@ -1,4 +1,10 @@
-version: 2
+version: 2.1
+workflows:
+  build_and_deploy:
+    jobs:
+      - build:
+          context:
+            - NPM
 jobs:
   build:
     environment:
@@ -11,7 +17,6 @@ jobs:
       - run:
           name: Deploy Package
           command: |
-            npm install npm-cli-login
             yarn
             yarn build
             echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" > ~/.npmrc
