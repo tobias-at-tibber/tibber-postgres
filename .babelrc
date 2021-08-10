@@ -1,7 +1,16 @@
 {
   "presets": [
-    "node6"
+    [
+      "@babel/preset-env",
+      {
+        "targets": {
+          "node": "10"
+        }
+      }
+    ]
   ],
-  "plugins": ["syntax-async-functions","transform-async-to-generator"],
-  "ignore": ["node_modules/**/*", "lib/**/*"]
+  "ignore": [
+    "node_modules/**/*",
+    "lib/**/*"
+  ]
 }

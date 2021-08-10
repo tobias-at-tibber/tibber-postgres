@@ -34,16 +34,16 @@ test('should be able to combine null and not null query values', async (t) => {
 
 test('should be able to infinity values into timestamps', async (t) => {
     const test = new DbTable('timestamps',conn);
-    var result = await test.insert({id:10,validFrom: Infinity,validTo: Infinity}, true, true);    
+    var result = await test.insert({id:10,validFrom: Infinity,validTo: Infinity}, true, true);
 });
 
 test('should be able to delete by id in object', async (t) => {
     const test = new DbTable('timestamps',conn);
-    await test.delete({id:1, test:3});    
+    await test.delete({id:1, test:3});
 });
 
 
 test('should be able to delete by id', async (t) => {
     const test = new DbTable('timestamps',conn);
-    await test.delete(2);    
+    await test.delete(2);
 });
