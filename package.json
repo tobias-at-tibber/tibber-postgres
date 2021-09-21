@@ -8,7 +8,12 @@
     "test": "ava --verbose",
     "login": "npm-cli-login -u $NPM_USERNAME -p $NPM_PASSWORD -e $NPM_EMAIL"
   },
-  "ava": { "require": [ "@babel/register" ], "failWithoutAssertions": false },
+  "ava": {
+    "require": [
+      "@babel/register"
+    ],
+    "failWithoutAssertions": false
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tibbercom/tibber-postgres.git"
