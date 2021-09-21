@@ -41,3 +41,5 @@ dist
 bower_components
 config.json
 build
+
+.idea
